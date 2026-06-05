@@ -33,7 +33,9 @@ Shared pure helpers then build parameter, accuracy, ROC, and fit-diagnostic rows
 for both simulated and user-data modes.
 The final edge writes CSV/parquet outputs and progress messages.
 
-Recoverable orchestration validation uses explicit fail-fast validation so runtime errors stay close to configuration boundaries.
+Recoverable orchestration validation uses `comp-builders` `Result` values where
+fail-fast composition is clearer than nested conditionals.
+The package is installed from <https://pypi.org/project/comp-builders/>.
 Numerical likelihood, calibration, constraint, and solver functions stay as
 ordinary typed Python functions so the statistical core remains easy to test and
 port.

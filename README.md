@@ -6,6 +6,8 @@
 
 Risk Bridge is a Python package for estimating transportable binary-risk models when the available cohorts do not all contain the same information. It combines propensity-score sampling, reference-cohort calibration, maximum likelihood estimation, and constrained maximum likelihood estimation (cMLE) into reproducible simulation and user-data workflows.
 
+Package title: **Risk Bridging through Constrained MLE**.
+
 ## Motivation
 
 Risk models often need to be evaluated or adapted across related populations: a target cohort, a source cohort, and a reference cohort. Standard model fitting can drift when covariate distributions, calibration strata, or observed risk markers differ across those cohorts. Risk Bridge provides a repeatable way to compare ordinary ML estimates with calibration-constrained estimates while preserving diagnostics, thresholds, and run metadata.
@@ -39,7 +41,10 @@ Run the test suite:
 
 ```bash
 uv run pytest
+uv run basedpyright
 ```
+
+The orchestration layer uses [`comp-builders`](https://pypi.org/project/comp-builders/) for explicit `Result` composition in recoverable validation paths. `uv sync --locked` installs it from PyPI as recorded in `uv.lock`.
 
 ## Quick start
 
@@ -149,6 +154,9 @@ assets/           README visual assets
 - [Quickstart](QUICKSTART.md)
 - [User guide](USER_GUIDE.md)
 - [API reference](API_REFERENCE.md)
+- [Architecture overview](ARCHITECTURE.md)
+- [Pipeline architecture](docs/architecture/python_pipeline_analysis.md)
+- [Solver strategy](docs/architecture/python_solver_strategy.md)
 - [Changelog](CHANGELOG.md)
 - [License](LICENSE)
 

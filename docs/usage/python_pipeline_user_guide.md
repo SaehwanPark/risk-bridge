@@ -10,13 +10,13 @@ applied analyses.
 Use `uv` when possible:
 
 ```bash
-uv add "risk-bridge @ git+https://github.com/SaehwanPark/risk-brdige.git"
+uv add "risk-bridge @ git+https://github.com/SaehwanPark/risk-bridge.git"
 ```
 
 `pip` also works:
 
 ```bash
-pip install "risk-bridge @ git+https://github.com/SaehwanPark/risk-brdige.git"
+pip install "risk-bridge @ git+https://github.com/SaehwanPark/risk-bridge.git"
 ```
 
 For a local checkout:
@@ -24,8 +24,10 @@ For a local checkout:
 ```bash
 uv sync
 uv run pytest
-uv run mypy
+uv run basedpyright
 ```
+
+The orchestration layer uses [`comp-builders`](https://pypi.org/project/comp-builders/) for explicit `Result` composition in recoverable validation paths.
 
 ## CLI
 
@@ -47,7 +49,7 @@ uv run risk-bridge \
   --n-reference 5000 \
   --sample-size 500 \
   --output-root data \
-  --run-label smoke
+  --run-label quickstart
 ```
 
 User-data run:

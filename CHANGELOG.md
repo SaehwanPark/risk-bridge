@@ -2,6 +2,19 @@
 
 All notable user-facing changes to Risk Bridge are recorded here.
 
+## 1.0.1 - Dependency and tooling compatibility
+
+### Added
+
+- Added `comp-builders` as a PyPI dependency for explicit `Result` composition in recoverable orchestration validation.
+- Added focused scenario runtime validation coverage for non-positive `n_jobs`, `path_jobs`, and `intermediate_flush_every`.
+
+### Changed
+
+- Lowered the package Python floor to `>=3.11` while keeping Python 3.13 compatibility.
+- Replaced the local `mypy` development check with `basedpyright` over the public typed surface.
+- Updated public documentation to describe the 1.0.1 dependency and type-checking workflow.
+
 ## 1.0.0 - Public repository release
 
 ### Added
