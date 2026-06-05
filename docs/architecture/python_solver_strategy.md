@@ -27,5 +27,5 @@ When changing likelihood, constraints, or calibration behavior:
 
 - update analytic derivatives in the same change
 - add or update focused numerical tests
-- run `uv run mypy`
+- run `uv run basedpyright`
 - run the likelihood, constraint, calibration, optimize, and pipeline tests

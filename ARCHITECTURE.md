@@ -10,7 +10,7 @@ library wrappers.
 - `risk_bridge.cli` and the `risk-bridge` console script run simulated and
   user-data workflows from command-line options.
 - `risk_bridge.api` exposes library-style wrappers around typed config objects.
-- `risk_bridge.pipeline` provides compact lower-level iterations and summary
+- `risk_bridge.pipeline` provides compact development iterations and summary
   outputs.
 
 ## Module Responsibilities
@@ -51,7 +51,8 @@ Directory creation, random generator setup, parallel execution, and file writes
 live at the orchestration edge.
 Likelihood, constraints, calibration, metrics, and row construction remain typed
 functions that are easier to test in isolation.
-Recoverable orchestration validation uses explicit fail-fast checks so configuration errors stay close to their boundary.
+Recoverable orchestration validation uses `comp-builders` `Result` composition
+where fail-fast control flow is clearer than nested conditionals.
 
 ## Contributor Guardrails
 
