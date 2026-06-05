@@ -20,6 +20,7 @@ import multiprocessing as mp
 from pathlib import Path
 from typing import Callable
 
+from comp_builders import Err, Ok, Result, result
 import numpy as np
 import polars as pl
 from scipy.optimize import minimize
@@ -67,16 +68,6 @@ from risk_bridge.types import CalibrationArtifacts, FitResult, Population
 
 MetricRow = dict[str, float | int]
 ObjectRow = dict[str, object]
-
-
-@dataclass(frozen=True)
-class Err:
-  error: str
-
-
-@dataclass(frozen=True)
-class Ok:
-  value: object
 
 
 def _parse_float_tuple(text: str) -> tuple[float, ...]:
@@ -1223,6 +1214,21 @@ class ScenarioRuntime:
   intermediate_flush_every: int
 
 
+def _positive_int_result(value: int, name: str) -> Result[int, str]:
+  if value <= 0:
+    return Err(f"{name} must be > 0")
+  return Ok(value)
+
+
+def _theta0_result(init_theta: tuple[float, ...], x_cols: list[str]) -> Result[np.ndarray, str]:
+  expected_theta_len = 1 + (len(x_cols) + 1) + (len(x_cols) + 2)
+  theta0 = np.asarray(init_theta, dtype=np.float64)
+  if len(theta0) != expected_theta_len:
+    return Err(f"init_theta length must be {expected_theta_len}; got {len(theta0)}")
+  return Ok(theta0)
+
+
+@result.block
 def _scenario_runtime(
   *,
   cfg: RunConfig,
@@ -1234,19 +1240,13 @@ def _scenario_runtime(
   path_jobs: int,
   intermediate_flush_every: int,
   run_label: str | None,
-) -> ScenarioRuntime | Err:
-  for name, value in {
-    "n_jobs": n_jobs,
-    "path_jobs": path_jobs,
-    "intermediate_flush_every": intermediate_flush_every,
-  }.items():
-    if value <= 0:
-      return Err(f"{name} must be > 0")
-
-  try:
-    theta0 = _validated_init_theta(init_theta, x_cols=x_cols)
-  except ValueError as exc:
-    return Err(str(exc))
+) -> Result[ScenarioRuntime, str]:
+  resolved_n_jobs = yield _positive_int_result(n_jobs, "n_jobs")
+  resolved_path_jobs = yield _positive_int_result(path_jobs, "path_jobs")
+  resolved_flush_every = yield _positive_int_result(
+    intermediate_flush_every, "intermediate_flush_every"
+  )
+  theta0 = yield _theta0_result(init_theta, x_cols)
 
   return ScenarioRuntime(
     run_label=run_label or cfg.sim.scenario_run_label,
@@ -1258,9 +1258,9 @@ def _scenario_runtime(
     ),
     source_feature_specs=cfg.sim.source_feature_specs or cfg.sim.feature_specs,
     theta0=theta0,
-    n_jobs=n_jobs,
-    path_jobs=path_jobs,
-    intermediate_flush_every=intermediate_flush_every,
+    n_jobs=resolved_n_jobs,
+    path_jobs=resolved_path_jobs,
+    intermediate_flush_every=resolved_flush_every,
   )
 
 
@@ -1295,7 +1295,7 @@ def run_scenario1_pipeline(
   )
   if isinstance(runtime_result, Err):
     raise ValueError(runtime_result.error)
-  runtime = runtime_result
+  runtime = runtime_result.value
   run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
   run_dir = output_root / f"python_{runtime.run_label}_{run_id}"
   runtime_dir = output_root / "python_runtime"

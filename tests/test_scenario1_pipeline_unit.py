@@ -3,8 +3,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import polars as pl
+import pytest
 
-from risk_bridge.config import FeatureSpec, UserDataRunConfig, UserDataSchema
+from risk_bridge.config import (
+  SCENARIO1_INIT_THETA,
+  FeatureSpec,
+  UserDataRunConfig,
+  UserDataSchema,
+)
 from risk_bridge.cli import (
   build_scenario1_run_config,
   build_scenario2_run_config,
@@ -334,3 +340,37 @@ def test_scenario_runtime_returns_explicit_result_for_invalid_options() -> None:
   )
 
   assert getattr(result, "error") == "init_theta length must be 12; got 1"
+
+
+@pytest.mark.parametrize(
+  ("option_name", "expected_error"),
+  (
+    ("n_jobs", "n_jobs must be > 0"),
+    ("path_jobs", "path_jobs must be > 0"),
+    ("intermediate_flush_every", "intermediate_flush_every must be > 0"),
+  ),
+)
+def test_scenario_runtime_returns_explicit_result_for_invalid_positive_options(
+  option_name: str, expected_error: str
+) -> None:
+  cfg = build_scenario1_run_config()
+  options = {
+    "n_jobs": 1,
+    "path_jobs": 1,
+    "intermediate_flush_every": 1,
+  }
+  options[option_name] = 0
+
+  result = _scenario_runtime(
+    cfg=cfg,
+    x_cols=[spec.name for spec in cfg.sim.feature_specs],
+    miscalibration_a=None,
+    miscalibration_b=None,
+    init_theta=SCENARIO1_INIT_THETA,
+    n_jobs=options["n_jobs"],
+    path_jobs=options["path_jobs"],
+    intermediate_flush_every=options["intermediate_flush_every"],
+    run_label=None,
+  )
+
+  assert getattr(result, "error") == expected_error
