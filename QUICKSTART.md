@@ -5,7 +5,7 @@ This guide gets Risk Bridge running in about five minutes.
 ## 1. Install dependencies
 
 ```bash
-git clone https://github.com/<your-org>/risk-bridge.git
+git clone https://github.com/SaehwanPark/risk-bridge.git
 cd risk-bridge
 uv sync --locked
 ```
