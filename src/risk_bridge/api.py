@@ -6,7 +6,12 @@ from pathlib import Path
 
 import polars as pl
 
-from risk_bridge.config import RunConfig, Scenario1PipelineOptions, UserDataRunConfig
+from risk_bridge.config import (
+  RunConfig,
+  Scenario1PipelineOptions,
+  UserDataRunConfig,
+)
+from risk_bridge.external import run_external_calibration_bootstrap
 from risk_bridge.pipeline import run_pipeline, run_single_iteration_result
 from risk_bridge.cli import (
   build_scenario1_run_config,
@@ -24,6 +29,7 @@ __all__ = [
   "build_scenario2_run_config",
   "build_scenario3_run_config",
   "run_pipeline",
+  "run_external_calibration_bootstrap",
   "run_scenario1",
   "run_scenario1_pipeline",
   "run_simulation",

@@ -22,5 +22,6 @@ wheels/
 
 # Generated comparison artifacts
 data/
+/temp/real-data-exp/
 execution_log.csv
 execution_log.txt

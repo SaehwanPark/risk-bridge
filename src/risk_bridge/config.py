@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import polars as pl
 
@@ -388,3 +389,88 @@ class UserDataRunConfig:
       raise ValueError("print_every must be >= 0")
     if not self.run_label:
       raise ValueError("run_label must be non-empty")
+
+
+@dataclass(frozen=True)
+class ExternalCalibrationSpec:
+  """Fixed target-X distribution and calibration summaries."""
+
+  target_feature_specs: tuple[FeatureSpec, ...]
+  x_interval_index: tuple[int, ...]
+  p_external: tuple[float, ...]
+
+  def __post_init__(self) -> None:
+    if not self.target_feature_specs:
+      raise ValueError("target_feature_specs must be non-empty")
+    if not self.p_external:
+      raise ValueError("p_external must be non-empty")
+    if any(not np.isfinite(value) or value < 0.0 or value > 1.0 for value in self.p_external):
+      raise ValueError("p_external values must be finite and in [0, 1]")
+    support_size = 1
+    for spec in self.target_feature_specs:
+      if spec.kind != "custom":
+        raise ValueError("External target feature specifications must use kind='custom'.")
+      values = tuple(int(value) for value in spec.params.get("values", ()))
+      probs = tuple(float(value) for value in spec.params.get("probs", ()))
+      if not values or len(values) != len(probs):
+        raise ValueError(f"{spec.name} values and probs must be non-empty and equal length")
+      if len(set(values)) != len(values):
+        raise ValueError(f"{spec.name} values must be unique")
+      if any(not np.isfinite(value) or value < 0.0 for value in probs):
+        raise ValueError(f"{spec.name} probabilities must be finite and non-negative")
+      if not np.isclose(sum(probs), 1.0):
+        raise ValueError(f"{spec.name} probabilities must sum to 1")
+      support_size *= len(values)
+    if len(self.x_interval_index) != support_size:
+      raise ValueError(
+        "x_interval_index length must equal the Cartesian target-X support size"
+      )
+    if any(value < 1 or value > len(self.p_external) for value in self.x_interval_index):
+      raise ValueError("x_interval_index values must be in [1, len(p_external)]")
+
+
+@dataclass(frozen=True)
+class ExternalCalibrationBootstrapConfig:
+  """Configuration for source bootstrap runs with fixed external calibration."""
+
+  source_df: pl.DataFrame | pd.DataFrame
+  schema: UserDataSchema
+  calibration: ExternalCalibrationSpec
+  n_target: int
+  seed: int = 631
+  nsim: int = 1000
+  sample_size: int = 2000
+  z_origin_scale: float = 1.0
+  maxiter: int = 200
+  n_jobs: int = 1
+  checkpoint_every: int = 25
+  feasibility_tol: float = 1e-6
+  calibration_tolerance: float = 0.1
+  init_theta: tuple[float, ...] = SCENARIO1_INIT_THETA
+  output_root: str = "data"
+  print_every: int = 100
+  run_label: str = "external_calibration"
+  write_sample_artifacts: bool = False
+  resume_run_dir: str | None = None
+
+  def __post_init__(self) -> None:
+    if self.seed < 0:
+      raise ValueError("seed must be >= 0")
+    for name, value in {
+      "n_target": self.n_target,
+      "nsim": self.nsim,
+      "sample_size": self.sample_size,
+      "maxiter": self.maxiter,
+      "n_jobs": self.n_jobs,
+      "checkpoint_every": self.checkpoint_every,
+    }.items():
+      if value <= 0:
+        raise ValueError(f"{name} must be > 0")
+    if self.sample_size > self.n_target:
+      raise ValueError("sample_size must not exceed n_target")
+    if not np.isfinite(self.z_origin_scale) or self.z_origin_scale <= 0.0:
+      raise ValueError("z_origin_scale must be finite and > 0")
+    if self.feasibility_tol <= 0.0 or self.calibration_tolerance <= 0.0:
+      raise ValueError("solver tolerances must be > 0")
+    if not self.output_root or not self.run_label:
+      raise ValueError("output_root and run_label must be non-empty")

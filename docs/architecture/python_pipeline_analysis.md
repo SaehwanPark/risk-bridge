@@ -35,7 +35,8 @@ The final edge writes CSV/parquet outputs and progress messages.
 
 Recoverable orchestration validation uses `comp-builders` `Result` values where
 fail-fast composition is clearer than nested conditionals.
-The package is installed from <https://pypi.org/project/comp-builders/>.
+The package is installed from
+<https://pypi.org/project/comp-builders/>.
 Numerical likelihood, calibration, constraint, and solver functions stay as
 ordinary typed Python functions so the statistical core remains easy to test and
 port.

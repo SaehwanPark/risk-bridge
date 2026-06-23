@@ -23,6 +23,7 @@ dependencies = [
   "numpy>=2.4.2",
   "pandas>=3.0.1",
   "polars>=1.38.1",
+  "rdata>=1.0.0",
   "scikit-learn>=1.8.0",
   "scipy>=1.17.1",
 ]
@@ -45,8 +46,8 @@ where = ["src"]
 [dependency-groups]
 dev = [
   "basedpyright>=1.39.6",
+  "matplotlib>=3.11.0",
   "pytest>=9.0.2",
-  "ruff>=0.14.0",
 ]
 
 [tool.basedpyright]

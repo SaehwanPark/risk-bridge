@@ -30,6 +30,7 @@ from sklearn.linear_model import LogisticRegression
 from risk_bridge.calibration import build_calibration_artifacts, enumerate_x_combinations
 from risk_bridge.config import (
   DEFAULT_Z_BINS,
+  ExternalCalibrationBootstrapConfig,
   FeatureSpec,
   OptimizationConfig,
   RunConfig,
@@ -60,6 +61,7 @@ from risk_bridge.tabular import (
   column_to_numpy,
   ensure_polars_frame,
   gather_rows,
+  load_tabular_input,
   rows_to_frame,
   select_to_numpy,
   write_tabular_export,
@@ -543,8 +545,9 @@ def _fit_path(
       tempcateg=tempcateg,
     )
 
+  cmle_start = mle.theta if np.all(np.isfinite(mle.theta)) else theta0
   cmle, _ = solve_cmle_with_ladder(
-    theta0=theta0,
+    theta0=cmle_start,
     objective_fn=objective_fn,
     objective_jac_fn=objective_jac_fn,
     constraints_fn=constraints_fn,
@@ -1914,9 +1917,12 @@ def _parse_args() -> argparse.Namespace:
   parser.add_argument(
     "--mode",
     type=str,
-    choices=("simulated", "user-data"),
+    choices=("simulated", "user-data", "external-calibration"),
     default="simulated",
-    help="simulated: generate synthetic populations; user-data: run on provided CSVs.",
+    help=(
+      "simulated: generate populations; user-data: use target/source/reference data; "
+      "external-calibration: bootstrap one source cohort against fixed summaries."
+    ),
   )
   parser.add_argument(
     "--scenario",
@@ -1947,9 +1953,20 @@ def _parse_args() -> argparse.Namespace:
   parser.add_argument("--run-label", type=str, default=None)
   parser.add_argument("--print-every", type=int, default=100)
   parser.add_argument("--write-parquet", action="store_true")
+  parser.add_argument("--external-calibration-json", type=str, default="")
+  parser.add_argument("--z-origin-scale", type=float, default=1.0)
+  parser.add_argument("--checkpoint-every", type=int, default=25)
+  parser.add_argument("--resume-run-dir", type=str, default="")
+  parser.add_argument("--write-sample-artifacts", action="store_true")
   parser.add_argument("--target-csv", type=str, default="")
   parser.add_argument("--source-csv", type=str, default="")
   parser.add_argument("--reference-csv", type=str, default="")
+  parser.add_argument("--target-data", type=str, default="")
+  parser.add_argument("--source-data", type=str, default="")
+  parser.add_argument("--reference-data", type=str, default="")
+  parser.add_argument("--target-object", type=str, default="")
+  parser.add_argument("--source-object", type=str, default="")
+  parser.add_argument("--reference-object", type=str, default="")
   parser.add_argument(
     "--y-col",
     type=str,
@@ -1986,6 +2003,16 @@ def _parse_args() -> argparse.Namespace:
     help="Comma-separated z bin boundaries used by constraints.",
   )
   return parser.parse_args()
+
+
+def _resolve_cli_data_path(
+  *, generic_path: str, legacy_csv_path: str, dataset_name: str
+) -> str:
+  if generic_path and legacy_csv_path:
+    raise ValueError(
+      f"Specify only one of --{dataset_name}-data or --{dataset_name}-csv."
+    )
+  return generic_path or legacy_csv_path
 
 
 def main() -> None:
@@ -2034,9 +2061,79 @@ def main() -> None:
     )
     return
 
-  if not args.target_csv or not args.source_csv or not args.reference_csv:
+  if args.mode == "external-calibration":
+    from risk_bridge.external import (
+      load_external_calibration_spec,
+      run_external_calibration_bootstrap,
+    )
+
+    source_path = _resolve_cli_data_path(
+      generic_path=args.source_data,
+      legacy_csv_path=args.source_csv,
+      dataset_name="source",
+    )
+    if not source_path or not args.external_calibration_json:
+      raise ValueError(
+        "external-calibration mode requires --source-data and "
+        "--external-calibration-json."
+      )
+    if not args.x_cols.strip():
+      raise ValueError("external-calibration mode requires --x-cols.")
+    source_df = load_tabular_input(
+      source_path,
+      object_name=args.source_object or None,
+      dataset_name="source",
+    )
+    x_cols = tuple(c.strip() for c in args.x_cols.split(",") if c.strip())
+    run_external_calibration_bootstrap(
+      ExternalCalibrationBootstrapConfig(
+        source_df=source_df,
+        schema=UserDataSchema(
+          x_cols=x_cols,
+          z_bins=_parse_float_tuple(args.z_bins),
+          y_col=args.y_col,
+          z_origin_col=args.z_origin_col,
+          z_cat_col=args.z_cat_col,
+          allow_z_origin_from_z_cat=args.allow_z_origin_from_zcat,
+        ),
+        calibration=load_external_calibration_spec(args.external_calibration_json),
+        n_target=len(source_df) if args.n_target is None else args.n_target,
+        seed=631 if args.seed is None else args.seed,
+        nsim=1000 if args.nsim is None else args.nsim,
+        sample_size=2000 if args.sample_size is None else args.sample_size,
+        z_origin_scale=args.z_origin_scale,
+        maxiter=args.maxiter,
+        n_jobs=args.n_jobs,
+        checkpoint_every=args.checkpoint_every,
+        feasibility_tol=args.feasibility_tol,
+        calibration_tolerance=args.calibration_tolerance,
+        output_root=args.output_root,
+        print_every=args.print_every,
+        run_label="external_calibration" if args.run_label is None else args.run_label,
+        write_sample_artifacts=args.write_sample_artifacts,
+        resume_run_dir=args.resume_run_dir or None,
+      )
+    )
+    return
+
+  target_path = _resolve_cli_data_path(
+    generic_path=args.target_data,
+    legacy_csv_path=args.target_csv,
+    dataset_name="target",
+  )
+  source_path = _resolve_cli_data_path(
+    generic_path=args.source_data,
+    legacy_csv_path=args.source_csv,
+    dataset_name="source",
+  )
+  reference_path = _resolve_cli_data_path(
+    generic_path=args.reference_data,
+    legacy_csv_path=args.reference_csv,
+    dataset_name="reference",
+  )
+  if not target_path or not source_path or not reference_path:
     raise ValueError(
-      "user-data mode requires --target-csv, --source-csv, and --reference-csv."
+      "user-data mode requires target, source, and reference data paths."
     )
   if not args.x_cols.strip():
     raise ValueError("user-data mode requires --x-cols.")
@@ -2044,9 +2141,21 @@ def main() -> None:
   x_cols = [c.strip() for c in args.x_cols.split(",") if c.strip()]
   z_bins = _parse_float_tuple(args.z_bins)
 
-  target_df = pl.read_csv(args.target_csv)
-  source_df = pl.read_csv(args.source_csv)
-  reference_df = pl.read_csv(args.reference_csv)
+  target_df = load_tabular_input(
+    target_path,
+    object_name=args.target_object or None,
+    dataset_name="target",
+  )
+  source_df = load_tabular_input(
+    source_path,
+    object_name=args.source_object or None,
+    dataset_name="source",
+  )
+  reference_df = load_tabular_input(
+    reference_path,
+    object_name=args.reference_object or None,
+    dataset_name="reference",
+  )
 
   run_user_data_pipeline(
     UserDataRunConfig(

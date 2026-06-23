@@ -2,8 +2,30 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
+from sklearn.linear_model import LogisticRegression
 
-from risk_bridge.sampling import propensity_scores_target_vs_source, psm_sample_source
+from risk_bridge.sampling import (
+  propensity_scores_target_vs_source,
+  propensity_scores_x_only,
+  psm_sample_source,
+)
+
+
+def test_x_only_propensity_scores_match_explicit_unpenalized_fit() -> None:
+  target = pl.DataFrame({"X1": [0, 0, 1, 1], "X2": [0, 1, 0, 1]})
+  source = pl.DataFrame({"X1": [0, 1, 1, 1], "X2": [0, 0, 1, 1]})
+  target_scores, source_scores = propensity_scores_x_only(
+    target, source, ["X1", "X2"]
+  )
+  x = np.vstack([target.to_numpy(), source.to_numpy()])
+  y = np.array([1] * len(target) + [0] * len(source))
+  with pytest.warns(FutureWarning):
+    reference = LogisticRegression(max_iter=1000, solver="lbfgs", penalty=None).fit(
+      x, y
+    )
+  expected = reference.predict_proba(x)[:, 1]
+
+  assert np.allclose(np.concatenate([target_scores, source_scores]), expected)
 
 
 def _target_source() -> tuple[pl.DataFrame, pl.DataFrame]:

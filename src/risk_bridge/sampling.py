@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import polars as pl
 from sklearn.linear_model import LogisticRegression
@@ -68,3 +70,61 @@ def psm_sample_source(
     work_scores[best_pos] = unavailable_score
 
   return gather_rows(pooled, source_pos[matched_pos])
+
+
+def propensity_scores_x_only(
+  target_x: FrameLike,
+  source_df: FrameLike,
+  covariates: list[str],
+) -> tuple[np.ndarray, np.ndarray]:
+  """Fit an unpenalized Treat~X model for an X-only pseudo target."""
+
+  target = ensure_polars_frame(target_x, clone=False)
+  source = ensure_polars_frame(source_df, clone=False)
+  x_target = select_to_numpy(target, covariates, dtype=np.float64)
+  x_source = select_to_numpy(source, covariates, dtype=np.float64)
+  x = np.vstack([x_target, x_source])
+  y = np.concatenate(
+    [np.ones(len(target), dtype=np.int64), np.zeros(len(source), dtype=np.int64)]
+  )
+  model = LogisticRegression(max_iter=1000, solver="lbfgs", penalty=None)
+  with warnings.catch_warnings():
+    warnings.filterwarnings(
+      "ignore", message="'penalty' was deprecated.*", category=FutureWarning
+    )
+    model.fit(x, y)
+  scores = model.predict_proba(x)[:, 1].astype(np.float64)
+  return scores[: len(target)], scores[len(target) :]
+
+
+def psm_sample_source_from_scores(
+  rng: np.random.Generator,
+  source_df: FrameLike,
+  target_scores: np.ndarray,
+  source_scores: np.ndarray,
+  sample_size: int,
+) -> pl.DataFrame:
+  """Sample target scores and greedily match source row instances once."""
+
+  source = ensure_polars_frame(source_df, clone=False)
+  target_arr = np.asarray(target_scores, dtype=np.float64)
+  source_arr = np.asarray(source_scores, dtype=np.float64)
+  if sample_size <= 0:
+    raise ValueError("sample_size must be > 0")
+  if sample_size > len(target_arr) or sample_size > len(source_arr):
+    raise ValueError("sample_size exceeds available target/source records")
+  if len(source_arr) != len(source):
+    raise ValueError("source_scores length must match source_df")
+
+  chosen = np.asarray(
+    rng.choice(len(target_arr), size=sample_size, replace=False), dtype=np.int64
+  )
+  work_scores = source_arr.copy()
+  distances = np.empty_like(work_scores)
+  matched = np.empty(sample_size, dtype=np.int64)
+  for i, score in enumerate(target_arr[chosen]):
+    np.abs(work_scores - score, out=distances)
+    best = int(np.argmin(distances))
+    matched[i] = best
+    work_scores[best] = np.inf
+  return gather_rows(source, matched)
