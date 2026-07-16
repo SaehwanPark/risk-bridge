@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: >-
+  If you use Risk Bridge, please cite it using the metadata below.
+  Add an archival DOI identifier after the Zenodo (or equivalent) deposit.
+title: "Risk Bridging through Constrained MLE"
+type: software
+authors:
+  - family-names: Park
+    given-names: Saehwan
+  - name: "Risk Bridge contributors"
+repository-code: "https://github.com/SaehwanPark/risk-bridge"
+url: "https://github.com/SaehwanPark/risk-bridge"
+license: Apache-2.0
+version: 1.0.1
+abstract: >-
+  Risk Bridge estimates transportable binary-risk models with propensity-score
+  sampling, reference-cohort calibration, maximum likelihood, and constrained
+  maximum likelihood (cMLE).
+keywords:
+  - risk-modeling
+  - calibration
+  - constrained-optimization
+  - maximum-likelihood
+  - biostatistics
+# identifiers:
+#   - type: doi
+#     value: "10.5281/zenodo.XXXXXXX"

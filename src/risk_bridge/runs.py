@@ -44,14 +44,21 @@ from risk_bridge.config import (
 from risk_bridge.constraints import (
   calibration_inequalities,
   calibration_inequalities_jacobian,
+  interval_expected_risk,
 )
 from risk_bridge.likelihood import (
   joint_negative_log_likelihood,
   joint_negative_log_likelihood_grad,
   logistic_risk,
 )
-from risk_bridge.metrics import find_threshold_for_fpr, roc_auc_binary, threshold_metrics
+from risk_bridge.metrics import (
+  calibration_metrics,
+  find_threshold_for_fpr,
+  roc_auc_binary,
+  threshold_metrics,
+)
 from risk_bridge.optimize import solve_cmle_with_ladder
+from risk_bridge.output_schema import OUTPUT_SCHEMA_VERSION
 from risk_bridge.preprocess import preprocess_user_dataset
 from risk_bridge.sampling import propensity_scores_target_vs_source, psm_sample_source
 from risk_bridge.simulate import generate_population
@@ -70,6 +77,45 @@ from risk_bridge.types import CalibrationArtifacts, FitResult, Population
 
 MetricRow = dict[str, float | int]
 ObjectRow = dict[str, object]
+
+CALIBRATION_METRIC_COLUMNS = [
+  "iter",
+  "estimator",
+  "path",
+  "calibration_in_the_large",
+  "calibration_slope",
+  "observed_expected_ratio",
+  "brier_score",
+]
+CALIBRATION_RESIDUAL_COLUMNS = [
+  "iter",
+  "estimator",
+  "path",
+  "risk_interval",
+  "residual",
+  "expected_risk",
+  "p_external",
+]
+FIT_DIAGNOSTIC_COLUMNS = [
+  "iter",
+  "path",
+  "mle_success",
+  "cmle_success",
+  "mle_status",
+  "cmle_status",
+  "mle_objective",
+  "cmle_objective",
+  "cmle_max_violation",
+]
+ROC_METRIC_COLUMNS = [
+  "iter",
+  "roc_CML_PSM",
+  "roc_CML_RS",
+  "roc_ML_PSM",
+  "roc_ML_RS",
+  "roc_base",
+  "roc_ref",
+]
 
 
 def _parse_float_tuple(text: str) -> tuple[float, ...]:
@@ -643,12 +689,16 @@ def _evaluate_theta_on_roc(
   roc_zc: np.ndarray,
   roc_y: np.ndarray,
   threshold: float,
-) -> tuple[float, dict[str, float]]:
+) -> tuple[float, dict[str, float], np.ndarray]:
   px = len(x_cols)
   alpha = float(theta[0])
   beta = np.asarray(theta[1 : 1 + px + 1], dtype=np.float64)
   score = logistic_risk(alpha, beta, roc_x, roc_zc)
-  return roc_auc_binary(roc_y, score), threshold_metrics(roc_y, score, threshold=threshold)
+  return (
+    roc_auc_binary(roc_y, score),
+    threshold_metrics(roc_y, score, threshold=threshold),
+    np.asarray(score, dtype=np.float64),
+  )
 
 
 @dataclass(frozen=True)
@@ -672,6 +722,15 @@ class EvaluationInputs:
 
 
 @dataclass(frozen=True)
+class ResidualExportInputs:
+  x_combs: np.ndarray
+  x_prob_external: np.ndarray
+  x_interval_index: np.ndarray
+  p_external: np.ndarray
+  tempcateg: np.ndarray
+
+
+@dataclass(frozen=True)
 class IterationExportRows:
   est_cml_psm_row: MetricRow
   est_cml_rs_row: MetricRow
@@ -683,6 +742,8 @@ class IterationExportRows:
   acc_ml_rs_row: MetricRow
   roc_row: MetricRow
   fit_diag_rows: tuple[ObjectRow, ObjectRow]
+  calibration_metric_rows: tuple[ObjectRow, ...]
+  calibration_residual_rows: tuple[ObjectRow, ...]
 
 
 def _path_fit_diagnostics(
@@ -701,14 +762,71 @@ def _path_fit_diagnostics(
   }
 
 
+def _calibration_metric_row(
+  *,
+  iteration: int,
+  estimator: str,
+  path: str,
+  y_true: np.ndarray,
+  predictions: np.ndarray,
+) -> ObjectRow:
+  metrics = calibration_metrics(y_true, predictions)
+  return {
+    "iter": iteration,
+    "estimator": estimator,
+    "path": path,
+    "calibration_in_the_large": metrics["calibration_in_the_large"],
+    "calibration_slope": metrics["calibration_slope"],
+    "observed_expected_ratio": metrics["observed_expected_ratio"],
+    "brier_score": metrics["brier_score"],
+  }
+
+
+def _calibration_residual_rows_for_theta(
+  *,
+  iteration: int,
+  estimator: str,
+  path: str,
+  theta: np.ndarray,
+  residual_inputs: ResidualExportInputs,
+) -> list[ObjectRow]:
+  p_external = np.asarray(residual_inputs.p_external, dtype=np.float64)
+  expected = interval_expected_risk(
+    theta=theta,
+    x_combs=residual_inputs.x_combs,
+    x_prob_external=residual_inputs.x_prob_external,
+    calibration_index=residual_inputs.x_interval_index,
+    n_bins=len(p_external),
+    tempcateg=residual_inputs.tempcateg,
+  )
+  residuals = expected - p_external
+  rows: list[ObjectRow] = []
+  for bin_idx, (residual, expected_risk, p_ext) in enumerate(
+    zip(residuals, expected, p_external, strict=True), start=1
+  ):
+    rows.append(
+      {
+        "iter": iteration,
+        "estimator": estimator,
+        "path": path,
+        "risk_interval": bin_idx,
+        "residual": float(residual),
+        "expected_risk": float(expected_risk),
+        "p_external": float(p_ext),
+      }
+    )
+  return rows
+
+
 def _iteration_export_rows(
   *,
   fits: PathFits,
   theta_cols: list[str],
   eval_inputs: EvaluationInputs,
+  residual_inputs: ResidualExportInputs,
 ) -> IterationExportRows:
   iteration = eval_inputs.iteration
-  roc_cml_psm, acc_cml_psm = _evaluate_theta_on_roc(
+  roc_cml_psm, acc_cml_psm, pred_cml_psm = _evaluate_theta_on_roc(
     theta=fits.cmle_psm.theta,
     x_cols=eval_inputs.x_cols,
     roc_x=eval_inputs.roc_x,
@@ -716,7 +834,7 @@ def _iteration_export_rows(
     roc_y=eval_inputs.roc_y,
     threshold=eval_inputs.threshold,
   )
-  roc_cml_rs, acc_cml_rs = _evaluate_theta_on_roc(
+  roc_cml_rs, acc_cml_rs, pred_cml_rs = _evaluate_theta_on_roc(
     theta=fits.cmle_rs.theta,
     x_cols=eval_inputs.x_cols,
     roc_x=eval_inputs.roc_x,
@@ -724,7 +842,7 @@ def _iteration_export_rows(
     roc_y=eval_inputs.roc_y,
     threshold=eval_inputs.threshold,
   )
-  roc_ml_psm, acc_ml_psm = _evaluate_theta_on_roc(
+  roc_ml_psm, acc_ml_psm, pred_ml_psm = _evaluate_theta_on_roc(
     theta=fits.mle_psm.theta,
     x_cols=eval_inputs.x_cols,
     roc_x=eval_inputs.roc_x,
@@ -732,13 +850,43 @@ def _iteration_export_rows(
     roc_y=eval_inputs.roc_y,
     threshold=eval_inputs.threshold,
   )
-  roc_ml_rs, acc_ml_rs = _evaluate_theta_on_roc(
+  roc_ml_rs, acc_ml_rs, pred_ml_rs = _evaluate_theta_on_roc(
     theta=fits.mle_rs.theta,
     x_cols=eval_inputs.x_cols,
     roc_x=eval_inputs.roc_x,
     roc_zc=eval_inputs.roc_zc,
     roc_y=eval_inputs.roc_y,
     threshold=eval_inputs.threshold,
+  )
+
+  path_specs: tuple[tuple[str, str, FitResult, np.ndarray], ...] = (
+    ("cMLE", "PSM", fits.cmle_psm, pred_cml_psm),
+    ("cMLE", "RS", fits.cmle_rs, pred_cml_rs),
+    ("ML", "PSM", fits.mle_psm, pred_ml_psm),
+    ("ML", "RS", fits.mle_rs, pred_ml_rs),
+  )
+  calibration_metric_rows = tuple(
+    _calibration_metric_row(
+      iteration=iteration,
+      estimator=estimator,
+      path=path,
+      y_true=eval_inputs.roc_y,
+      predictions=predictions,
+    )
+    for estimator, path, _fit, predictions in path_specs
+  )
+  residual_row_lists = [
+    _calibration_residual_rows_for_theta(
+      iteration=iteration,
+      estimator=estimator,
+      path=path,
+      theta=fit.theta,
+      residual_inputs=residual_inputs,
+    )
+    for estimator, path, fit, _predictions in path_specs
+  ]
+  calibration_residual_rows = tuple(
+    row for rows in residual_row_lists for row in rows
   )
 
   return IterationExportRows(
@@ -775,6 +923,8 @@ def _iteration_export_rows(
         iteration=iteration, path="RS", mle=fits.mle_rs, cmle=fits.cmle_rs
       ),
     ),
+    calibration_metric_rows=calibration_metric_rows,
+    calibration_residual_rows=calibration_residual_rows,
   )
 
 
@@ -1180,6 +1330,13 @@ def _run_parallel_sim_iteration(task: dict[str, object]) -> dict[str, object]:
       base_score=base_score,
       ref_score=ref_score,
     ),
+    residual_inputs=ResidualExportInputs(
+      x_combs=x_combs_np,
+      x_prob_external=x_prob_external,
+      x_interval_index=artifacts.x_interval_index,
+      p_external=artifacts.p_external,
+      tempcateg=z_bins,
+    ),
   )
 
   return {
@@ -1202,6 +1359,8 @@ def _run_parallel_sim_iteration(task: dict[str, object]) -> dict[str, object]:
     "threshold_row": threshold_row,
     "prevalence_row": prevalence_row,
     "fit_diag_rows": list(rows.fit_diag_rows),
+    "calibration_metric_rows": list(rows.calibration_metric_rows),
+    "calibration_residual_rows": list(rows.calibration_residual_rows),
   }
 
 
@@ -1338,6 +1497,8 @@ def run_scenario1_pipeline(
   threshold_rows: list[dict[str, float | int]] = []
   prevalence_rows: list[dict[str, float | int]] = []
   fit_diag_rows: list[dict[str, object]] = []
+  calibration_metric_rows: list[dict[str, object]] = []
+  calibration_residual_rows: list[dict[str, object]] = []
 
   if runtime.n_jobs >= 1:
     seed_seq = np.random.SeedSequence(cfg.seed)
@@ -1427,6 +1588,8 @@ def run_scenario1_pipeline(
       threshold_rows.append(out["threshold_row"])
       prevalence_rows.append(out["prevalence_row"])
       fit_diag_rows.extend(out["fit_diag_rows"])
+      calibration_metric_rows.extend(out["calibration_metric_rows"])
+      calibration_residual_rows.extend(out["calibration_residual_rows"])
       consumed += 1
 
       if consumed % runtime.intermediate_flush_every == 0:
@@ -1464,37 +1627,19 @@ def run_scenario1_pipeline(
     acc_base_df = rows_to_frame(acc_base_rows, columns=acc_cols)
     acc_ref_df = rows_to_frame(acc_ref_rows, columns=acc_cols)
 
-    roc_df = rows_to_frame(
-      roc_rows,
-      columns=[
-        "iter",
-        "roc_CML_PSM",
-        "roc_CML_RS",
-        "roc_ML_PSM",
-        "roc_ML_RS",
-        "roc_base",
-        "roc_ref",
-      ],
-    )
+    roc_df = rows_to_frame(roc_rows, columns=ROC_METRIC_COLUMNS)
     threshold_df = rows_to_frame(
       threshold_rows, columns=["iter", "threshold_ref_fpr"]
     )
     prevalence_df = rows_to_frame(
       prevalence_rows, columns=["iter", "prevalence_target"]
     )
-    fit_diag_df = rows_to_frame(
-      fit_diag_rows,
-      columns=[
-        "iter",
-        "path",
-        "mle_success",
-        "cmle_success",
-        "mle_status",
-        "cmle_status",
-        "mle_objective",
-        "cmle_objective",
-        "cmle_max_violation",
-      ],
+    fit_diag_df = rows_to_frame(fit_diag_rows, columns=FIT_DIAGNOSTIC_COLUMNS)
+    calibration_metrics_df = rows_to_frame(
+      calibration_metric_rows, columns=CALIBRATION_METRIC_COLUMNS
+    )
+    calibration_residuals_df = rows_to_frame(
+      calibration_residual_rows, columns=CALIBRATION_RESIDUAL_COLUMNS
     )
 
     run_metadata_df = rows_to_frame(
@@ -1524,6 +1669,7 @@ def run_scenario1_pipeline(
           "n_jobs": runtime.n_jobs,
           "path_jobs": runtime.path_jobs,
           "intermediate_flush_every": runtime.intermediate_flush_every,
+          "schema_version": OUTPUT_SCHEMA_VERSION,
         }
       ],
       columns=[
@@ -1551,6 +1697,7 @@ def run_scenario1_pipeline(
         "n_jobs",
         "path_jobs",
         "intermediate_flush_every",
+        "schema_version",
       ],
     )
 
@@ -1596,6 +1743,14 @@ def run_scenario1_pipeline(
     )
     write_tabular_export(
       fit_diag_df, final_dir / "fit_diagnostics.csv", write_parquet
+    )
+    parquet_written |= write_tabular_export(
+      calibration_metrics_df, final_dir / "calibration_metrics.csv", write_parquet
+    )
+    parquet_written |= write_tabular_export(
+      calibration_residuals_df,
+      final_dir / "calibration_residuals.csv",
+      write_parquet,
     )
     run_metadata_df.write_csv(final_dir / "run_metadata.csv")
     if write_parquet and not parquet_written:
@@ -1689,6 +1844,8 @@ def run_user_data_pipeline(config: UserDataRunConfig) -> Path:
   threshold_rows: list[dict[str, float | int]] = []
   prevalence_rows: list[dict[str, float | int]] = []
   fit_diag_rows: list[dict[str, object]] = []
+  calibration_metric_rows: list[dict[str, object]] = []
+  calibration_residual_rows: list[dict[str, object]] = []
   intermediate_buffers: dict[str, list[pl.DataFrame]] = {
     "xind": [],
     "pe": [],
@@ -1751,6 +1908,13 @@ def run_user_data_pipeline(config: UserDataRunConfig) -> Path:
         base_score=base_score,
         ref_score=ref_score,
       ),
+      residual_inputs=ResidualExportInputs(
+        x_combs=context.x_combos_np,
+        x_prob_external=context.x_prob_external,
+        x_interval_index=context.artifacts.x_interval_index,
+        p_external=context.artifacts.p_external,
+        tempcateg=context.z_bins_arr,
+      ),
     )
     est_cml_psm_rows.append(rows.est_cml_psm_row)
     est_cml_rs_rows.append(rows.est_cml_rs_row)
@@ -1762,6 +1926,8 @@ def run_user_data_pipeline(config: UserDataRunConfig) -> Path:
     acc_ml_rs_rows.append(rows.acc_ml_rs_row)
     roc_rows.append(rows.roc_row)
     fit_diag_rows.extend(rows.fit_diag_rows)
+    calibration_metric_rows.extend(rows.calibration_metric_rows)
+    calibration_residual_rows.extend(rows.calibration_residual_rows)
 
     if config.print_every > 0 and tt % config.print_every == 0:
       print(
@@ -1788,33 +1954,15 @@ def run_user_data_pipeline(config: UserDataRunConfig) -> Path:
   acc_base_df = rows_to_frame(acc_base_rows, columns=acc_cols)
   acc_ref_df = rows_to_frame(acc_ref_rows, columns=acc_cols)
 
-  roc_df = rows_to_frame(
-    roc_rows,
-    columns=[
-      "iter",
-      "roc_CML_PSM",
-      "roc_CML_RS",
-      "roc_ML_PSM",
-      "roc_ML_RS",
-      "roc_base",
-      "roc_ref",
-    ],
-  )
+  roc_df = rows_to_frame(roc_rows, columns=ROC_METRIC_COLUMNS)
   threshold_df = rows_to_frame(threshold_rows, columns=["iter", "threshold_ref_fpr"])
   prevalence_df = rows_to_frame(prevalence_rows, columns=["iter", "prevalence_target"])
-  fit_diag_df = rows_to_frame(
-    fit_diag_rows,
-    columns=[
-      "iter",
-      "path",
-      "mle_success",
-      "cmle_success",
-      "mle_status",
-      "cmle_status",
-      "mle_objective",
-      "cmle_objective",
-      "cmle_max_violation",
-    ],
+  fit_diag_df = rows_to_frame(fit_diag_rows, columns=FIT_DIAGNOSTIC_COLUMNS)
+  calibration_metrics_df = rows_to_frame(
+    calibration_metric_rows, columns=CALIBRATION_METRIC_COLUMNS
+  )
+  calibration_residuals_df = rows_to_frame(
+    calibration_residual_rows, columns=CALIBRATION_RESIDUAL_COLUMNS
   )
 
   run_metadata_df = rows_to_frame(
@@ -1835,6 +1983,7 @@ def run_user_data_pipeline(config: UserDataRunConfig) -> Path:
         "n_jobs": config.n_jobs,
         "path_jobs": config.path_jobs,
         "intermediate_flush_every": config.intermediate_flush_every,
+        "schema_version": OUTPUT_SCHEMA_VERSION,
       }
     ],
     columns=[
@@ -1853,6 +2002,7 @@ def run_user_data_pipeline(config: UserDataRunConfig) -> Path:
       "n_jobs",
       "path_jobs",
       "intermediate_flush_every",
+      "schema_version",
     ],
   )
 
@@ -1898,6 +2048,14 @@ def run_user_data_pipeline(config: UserDataRunConfig) -> Path:
   )
   write_tabular_export(
     fit_diag_df, final_dir / "fit_diagnostics.csv", config.write_parquet
+  )
+  parquet_written |= write_tabular_export(
+    calibration_metrics_df, final_dir / "calibration_metrics.csv", config.write_parquet
+  )
+  parquet_written |= write_tabular_export(
+    calibration_residuals_df,
+    final_dir / "calibration_residuals.csv",
+    config.write_parquet,
   )
   run_metadata_df.write_csv(final_dir / "run_metadata.csv")
 

@@ -1,0 +1,30 @@
+{
+  "seed": 475,
+  "alpha_target": -2.38,
+  "beta": [-0.5, 0.4, 0.3, 0.65, 0.1],
+  "gamma": [-2.0, 0.1, -0.1, 0.1, 0.1, 0.6],
+  "z_bins": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+  "miscalibration_a": 0.5,
+  "miscalibration_b": 1.0,
+  "target_fpr": 0.1,
+  "profiles": {
+    "smoke": {
+      "n_target": 200,
+      "n_source": 150,
+      "n_reference": 200,
+      "sample_size": 40,
+      "nsim": 1,
+      "maxiter": 30,
+      "path_jobs": 1
+    },
+    "midsize": {
+      "n_target": 5000,
+      "n_source": 2000,
+      "n_reference": 5000,
+      "sample_size": 500,
+      "nsim": 5,
+      "maxiter": 200,
+      "path_jobs": 2
+    }
+  }
+}

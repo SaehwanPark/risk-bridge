@@ -11,7 +11,8 @@ Risk Bridge is organized as a small functional core wrapped by run orchestration
 - `risk_bridge.likelihood`: likelihood and analytic gradient calculations
 - `risk_bridge.constraints`: calibration constraints and Jacobians
 - `risk_bridge.optimize`: constrained solver ladder
-- `risk_bridge.metrics`: ROC and threshold metrics
+- `risk_bridge.metrics`: ROC, threshold, and standalone calibration metrics for
+  labeled predictions
 
 ## Orchestration
 
@@ -48,8 +49,14 @@ Both simulated and user-data modes follow the same estimation flow:
 3. Create PSM and random-sampling analysis samples.
 4. Fit unconstrained ML.
 5. Fit constrained cMLE with the solver ladder.
-6. Evaluate threshold metrics and ROC/AUC.
-7. Write intermediate and final CSV outputs.
+6. Evaluate threshold metrics, ROC/AUC (secondary), and primary calibration
+   metrics (CITL, slope, O/E, Brier) plus post-fit moment residuals.
+7. Write intermediate and final CSV outputs with `schema_version` in run
+   metadata.
+
+The CSV output contract version is `1.1.0` (`risk_bridge.output_schema`).
+Optimizer-bound moment residuals remain computed in `risk_bridge.constraints`
+and are also exported post-fit for manuscript-facing diagnostics.
 
 ## Public Configuration
 

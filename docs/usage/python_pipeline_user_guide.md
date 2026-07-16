@@ -167,14 +167,17 @@ package.
 Each run writes an output directory with:
 
 - `intermediate/`: sampled data and calibration artifacts by iteration
-- `final/`: estimates, accuracy metrics, ROC metrics, threshold metadata,
-  target prevalence, fit diagnostics, and run metadata
+- `final/`: estimates, accuracy metrics, primary calibration summaries
+  (`calibration_metrics.csv`, `calibration_residuals.csv`), secondary ROC
+  metrics, threshold metadata, target prevalence, fit diagnostics, and run
+  metadata including `schema_version` (`1.1.0`)
 
 The most useful first files to inspect are:
 
 - `final/run_metadata.csv`
 - `final/fit_diagnostics.csv`
 - `final/est_cml_psm.csv`
+- `final/calibration_metrics.csv`
 - `final/roc_metrics.csv`
 
 ## External-Calibration Bootstrap Runs

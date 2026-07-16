@@ -29,6 +29,19 @@ Risk models often need to be evaluated or adapted across related populations: a 
 
 ## Installation
 
+### From the package index (standard path after publication)
+
+Once the `risk-bridge` package is published:
+
+```bash
+uv add risk-bridge
+# or: pip install risk-bridge
+```
+
+Until the first public upload completes, install from this repository checkout instead.
+
+### From a repository checkout
+
 Risk Bridge is packaged with `uv` and a checked-in lock file. To install `uv`, read [this](https://docs.astral.sh/uv/getting-started/installation/).
 
 ```bash
@@ -44,7 +57,7 @@ uv run pytest
 uv run basedpyright
 ```
 
-The orchestration layer uses [`comp-builders`](https://pypi.org/project/comp-builders/) for explicit `Result` composition in recoverable validation paths. `uv sync --locked` installs it from PyPI as recorded in `uv.lock`.
+The orchestration layer uses [`comp-builders`](https://pypi.org/project/comp-builders/) for explicit `Result` composition in recoverable validation paths. `uv sync --locked` installs it from the package index as recorded in `uv.lock`.
 
 ## Quick start
 
@@ -133,17 +146,27 @@ print(run_dir)
 
 Each run writes a timestamped directory under `output_root` with `intermediate/` and `final/` folders. Start with these final outputs:
 
-- `final/run_metadata.csv`
+- `final/run_metadata.csv` (includes `schema_version`, currently `1.1.0`)
 - `final/fit_diagnostics.csv`
 - `final/est_cml_psm.csv`
+- `final/calibration_metrics.csv`
+- `final/calibration_residuals.csv`
 - `final/roc_metrics.csv`
 - `final/accuracy_metrics.csv`
+
+## Reproduction
+
+End-to-end regeneration commands for Scenario 2, numerical validation, and the
+synthetic transport second example are in [REPRODUCTION.md](REPRODUCTION.md).
+Cite this software with [CITATION.cff](CITATION.cff); add an archival DOI after
+the Zenodo (or equivalent) deposit.
 
 ## Repository layout
 
 ```text
 src/risk_bridge/  Python package source
 tests/            Unit tests
+cases/            Privacy-safe replication harnesses
 examples/         Minimal runnable examples
 docs/             Supplementary documentation
 assets/           README visual assets
@@ -152,12 +175,15 @@ assets/           README visual assets
 ## Documentation
 
 - [Quickstart](QUICKSTART.md)
+- [Reproduction runbook](REPRODUCTION.md)
 - [User guide](USER_GUIDE.md)
 - [API reference](API_REFERENCE.md)
 - [Architecture overview](ARCHITECTURE.md)
 - [Pipeline architecture](docs/architecture/python_pipeline_analysis.md)
 - [Solver strategy](docs/architecture/python_solver_strategy.md)
+- [Replication cases](cases/README.md)
 - [Changelog](CHANGELOG.md)
+- [Citation](CITATION.cff)
 - [License](LICENSE)
 
 ## License

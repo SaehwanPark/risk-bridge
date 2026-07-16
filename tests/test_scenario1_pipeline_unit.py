@@ -21,6 +21,7 @@ from risk_bridge.cli import (
 from risk_bridge.runs import (
   EvaluationInputs,
   PathFits,
+  ResidualExportInputs,
   _accuracy_row,
   _iteration_export_rows,
   _scenario_runtime,
@@ -214,6 +215,19 @@ def test_run_user_data_pipeline_smoke(tmp_path: Path) -> None:
   meta = pl.read_csv(final_dir / "run_metadata.csv")
   assert meta.get_column("mode").item(0) == "user_data"
   assert int(meta.get_column("path_jobs").item(0)) == 2
+  assert meta.get_column("schema_version").item(0) == "1.1.0"
+  cal = pl.read_csv(final_dir / "calibration_metrics.csv")
+  assert set(zip(cal["estimator"].to_list(), cal["path"].to_list(), strict=True)) == {
+    ("cMLE", "PSM"),
+    ("cMLE", "RS"),
+    ("ML", "PSM"),
+    ("ML", "RS"),
+  }
+  residuals = pl.read_csv(final_dir / "calibration_residuals.csv")
+  assert residuals.height > 0
+  assert set(residuals["risk_interval"].to_list()) == set(
+    range(1, int(residuals["risk_interval"].max()) + 1)
+  )
 
 
 def test_run_scenario1_pipeline_parallel_smoke(tmp_path: Path) -> None:
@@ -279,7 +293,7 @@ def test_functional_theta_and_accuracy_rows_are_stable() -> None:
 
 
 def test_functional_iteration_export_rows_preserve_contract() -> None:
-  def fit(theta: tuple[float, float]) -> FitResult:
+  def fit(theta: tuple[float, ...]) -> FitResult:
     return FitResult(
       theta=np.array(theta, dtype=np.float64),
       success=True,
@@ -289,14 +303,15 @@ def test_functional_iteration_export_rows_preserve_contract() -> None:
       diagnostics={"max_violation": 0.0},
     )
 
+  # px=0 => theta = [alpha, beta_z, gamma0, sigma]
   rows = _iteration_export_rows(
     fits=PathFits(
-      mle_psm=fit((-0.2, 0.1)),
-      cmle_psm=fit((-0.3, 0.2)),
-      mle_rs=fit((-0.4, 0.3)),
-      cmle_rs=fit((-0.5, 0.4)),
+      mle_psm=fit((-0.2, 0.1, 0.0, 1.0)),
+      cmle_psm=fit((-0.3, 0.2, 0.0, 1.0)),
+      mle_rs=fit((-0.4, 0.3, 0.0, 1.0)),
+      cmle_rs=fit((-0.5, 0.4, 0.0, 1.0)),
     ),
-    theta_cols=["alpha", "beta_Zcat"],
+    theta_cols=["alpha", "beta_Zcat", "gamma_0", "gamma_sigma"],
     eval_inputs=EvaluationInputs(
       iteration=7,
       x_cols=[],
@@ -307,9 +322,22 @@ def test_functional_iteration_export_rows_preserve_contract() -> None:
       base_score=np.array([0.1, 0.8, 0.2, 0.9], dtype=np.float64),
       ref_score=np.array([0.2, 0.7, 0.3, 0.8], dtype=np.float64),
     ),
+    residual_inputs=ResidualExportInputs(
+      x_combs=np.empty((2, 0), dtype=np.float64),
+      x_prob_external=np.array([0.5, 0.5], dtype=np.float64),
+      x_interval_index=np.array([1, 2], dtype=np.int64),
+      p_external=np.array([0.2, 0.3], dtype=np.float64),
+      tempcateg=np.array([0.25, 0.5, 0.75], dtype=np.float64),
+    ),
   )
 
-  assert rows.est_cml_psm_row == {"iter": 7, "alpha": -0.3, "beta_Zcat": 0.2}
+  assert rows.est_cml_psm_row == {
+    "iter": 7,
+    "alpha": -0.3,
+    "beta_Zcat": 0.2,
+    "gamma_0": 0.0,
+    "gamma_sigma": 1.0,
+  }
   assert set(rows.roc_row) == {
     "iter",
     "roc_CML_PSM",
@@ -322,6 +350,24 @@ def test_functional_iteration_export_rows_preserve_contract() -> None:
   assert rows.fit_diag_rows[0]["path"] == "PSM"
   assert rows.fit_diag_rows[1]["path"] == "RS"
   assert rows.fit_diag_rows[0]["cmle_max_violation"] == 0.0
+  assert len(rows.calibration_metric_rows) == 4
+  assert {
+    (row["estimator"], row["path"]) for row in rows.calibration_metric_rows
+  } == {("cMLE", "PSM"), ("cMLE", "RS"), ("ML", "PSM"), ("ML", "RS")}
+  assert len(rows.calibration_residual_rows) == 8
+  assert all(
+    set(row)
+    >= {
+      "iter",
+      "estimator",
+      "path",
+      "risk_interval",
+      "residual",
+      "expected_risk",
+      "p_external",
+    }
+    for row in rows.calibration_residual_rows
+  )
 
 
 def test_scenario_runtime_returns_explicit_result_for_invalid_options() -> None:
