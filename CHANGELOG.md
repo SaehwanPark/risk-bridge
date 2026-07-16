@@ -12,9 +12,8 @@ All notable user-facing changes to Risk Bridge are recorded here.
   harnesses with regenerable artifacts under `data/`.
 - Schema-versioned calibration exports (`calibration_metrics.csv`,
   `calibration_residuals.csv`, `schema_version=1.1.0`).
-
-Visibility, GitHub push, package-index upload, and archival DOI remain
-approval-gated and are not claimed complete in this tree.
+- Public GitHub repository and package-index publication for `risk-bridge==1.0.1`
+  (GitHub release `v1.0.1`). Archival DOI remains pending Zenodo deposit.
 
 ## 1.0.1 - Dependency and tooling compatibility
 

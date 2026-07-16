@@ -102,9 +102,9 @@ Inspect `case_manifest.json`, `environment.json`, cohort CSVs, and
 ## Citation and archival DOI
 
 Package citation metadata lives in [CITATION.cff](CITATION.cff). An archival DOI is
-minted **after** the public GitHub archive is deposited (for example via Zenodo). Until
-that deposit completes, cite the versioned GitHub release / tag and leave the DOI field
-empty in `CITATION.cff`.
+minted **after** the public GitHub archive is deposited (for example via Zenodo).
+Cite the versioned GitHub release tag until that deposit completes, then fill the
+DOI field in `CITATION.cff` and re-export.
 
 ## Release operator notes (development checkout)
 
@@ -112,11 +112,10 @@ Public export and package publication are driven from the development repository
 `deployment/` scripts (not shipped in this public tree):
 
 1. `deployment/publish_public_repo.sh` — dry-run by default; `--apply` writes the local
-   public checkout; `--push` updates the public remote only after explicit approval.
+   public checkout; `--push` updates the public remote.
 2. Build artifacts in the public checkout with `uv build`.
 3. `deployment/publish_pypi.sh --repository testpypi` — dry-run validation; add
-   `--execute` only with a publish token and explicit approval (then repeat for the
-   primary index).
+   `--execute` with a publish token (then repeat for the primary index).
 
-Do not claim public-release readiness until visibility, push, package publication, and
-DOI minting are actually complete.
+The `v1.0.1` public repository, GitHub release, and package-index uploads are
+complete. Archival DOI minting remains the remaining A-018 follow-up.

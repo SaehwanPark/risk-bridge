@@ -29,20 +29,16 @@ Risk models often need to be evaluated or adapted across related populations: a 
 
 ## Installation
 
-### From the package index (standard path after publication)
-
-Once the `risk-bridge` package is published:
+### From the package index (standard path)
 
 ```bash
 uv add risk-bridge
 # or: pip install risk-bridge
 ```
 
-Until the first public upload completes, install from this repository checkout instead.
-
 ### From a repository checkout
 
-Risk Bridge is packaged with `uv` and a checked-in lock file. To install `uv`, read [this](https://docs.astral.sh/uv/getting-started/installation/).
+Risk Bridge is also packaged with `uv` and a checked-in lock file. To install `uv`, read [this](https://docs.astral.sh/uv/getting-started/installation/).
 
 ```bash
 git clone git@github.com/SaehwanPark/risk-bridge.git
