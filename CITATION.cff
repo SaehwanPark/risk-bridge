@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: >-
   If you use Risk Bridge, please cite it using the metadata below.
-  Add an archival DOI identifier after the Zenodo (or equivalent) deposit.
+  The version-specific Zenodo DOI and concept DOI are listed below.
 title: "Risk Bridging through Constrained MLE"
 type: software
 authors:
@@ -22,6 +22,10 @@ keywords:
   - constrained-optimization
   - maximum-likelihood
   - biostatistics
-# identifiers:
-#   - type: doi
-#     value: "10.5281/zenodo.XXXXXXX"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21401397"
+    description: "Version 1.0.1 archival record"
+  - type: doi
+    value: "10.5281/zenodo.21401396"
+    description: "Concept DOI for all Risk Bridge versions"
