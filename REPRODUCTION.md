@@ -19,7 +19,7 @@ uv run pytest
 uv run basedpyright
 ```
 
-## 1. Scenario 2 four-path calibration (smoke)
+## 1. Scenario 2 four-path calibration (local reduced sizes)
 
 Suitable for local artifact prep. This is **not** a full publication Monte Carlo.
 
@@ -61,7 +61,7 @@ uv run risk-bridge \
   --run-label scenario2_full
 ```
 
-Do not treat the smoke command above as a substitute for this full preset when
+Do not treat the reduced-size command above as a substitute for this full preset when
 preparing publication Monte Carlo tables.
 
 ## 2. Independent numerical validation

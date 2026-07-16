@@ -23,9 +23,14 @@ library wrappers.
 - `risk_bridge.likelihood`: likelihood and analytic objective gradients.
 - `risk_bridge.constraints`: calibration inequalities and analytic Jacobians.
 - `risk_bridge.optimize`: unconstrained ML and constrained cMLE solver ladder.
-- `risk_bridge.metrics`: threshold, accuracy, ROC, and AUC metrics.
+- `risk_bridge.metrics`: threshold, accuracy, ROC/AUC, and standalone
+  calibration metrics for labeled predictions.
+- `risk_bridge.output_schema`: versioned CSV output-contract constant.
 - `risk_bridge.runs`: simulated and user-data orchestration loops.
 - `risk_bridge.tabular`: CSV/parquet-oriented output helpers.
+- `cases/`: privacy-safe replication harnesses (`numerical_validation` and
+  `synthetic_transport_example`) that configure package entrypoints without
+  owning estimator logic.
 
 ## Data Flow
 
@@ -37,8 +42,8 @@ typed config
   -> PSM and random-sampling analysis samples
   -> calibration artifacts from reference data
   -> unconstrained ML and constrained cMLE
-  -> threshold, ROC, and fit diagnostic rows
-  -> intermediate and final tabular outputs
+  -> threshold, ROC, calibration-metric, residual, and fit diagnostic rows
+  -> intermediate and final tabular outputs (schema_version in run metadata)
 ```
 
 Run orchestration keeps side effects at the edges:

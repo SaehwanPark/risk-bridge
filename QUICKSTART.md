@@ -14,6 +14,7 @@ uv sync --locked
 
 ```bash
 uv run pytest
+uv run basedpyright
 ```
 
 ## 3. Run a small simulation

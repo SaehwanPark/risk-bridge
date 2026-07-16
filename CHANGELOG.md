@@ -2,11 +2,25 @@
 
 All notable user-facing changes to Risk Bridge are recorded here.
 
+## Unreleased
+
+### Added
+
+- CI workflow, `CITATION.cff`, and `REPRODUCTION.md` for the public reproduction
+  bundle.
+- Privacy-safe `cases/numerical_validation` and `cases/synthetic_transport_example`
+  harnesses with regenerable artifacts under `data/`.
+- Schema-versioned calibration exports (`calibration_metrics.csv`,
+  `calibration_residuals.csv`, `schema_version=1.1.0`).
+
+Visibility, GitHub push, package-index upload, and archival DOI remain
+approval-gated and are not claimed complete in this tree.
+
 ## 1.0.1 - Dependency and tooling compatibility
 
 ### Added
 
-- Added `comp-builders` as a PyPI dependency for explicit `Result` composition in recoverable orchestration validation.
+- Added `comp-builders` as a package-index dependency for explicit `Result` composition in recoverable orchestration validation.
 - Added focused scenario runtime validation coverage for non-positive `n_jobs`, `path_jobs`, and `intermediate_flush_every`.
 
 ### Changed
