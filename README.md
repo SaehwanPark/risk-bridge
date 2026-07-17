@@ -36,6 +36,10 @@ uv add risk-bridge
 # or: pip install risk-bridge
 ```
 
+The public-safe reproduction case runners are included in the wheel and source
+distribution. After installation, run them with `python -m cases.<case>.<runner>`;
+the same module commands work from a prepared source checkout.
+
 ### From a repository checkout
 
 Risk Bridge is also packaged with `uv` and a checked-in lock file. To install `uv`, read [this](https://docs.astral.sh/uv/getting-started/installation/).
@@ -155,8 +159,8 @@ Each run writes a timestamped directory under `output_root` with `intermediate/`
 End-to-end regeneration commands for Scenario 2, numerical validation, external
 calibration validation, the synthetic transport second example, and the
 runtime/support-scaling protocol are in [REPRODUCTION.md](REPRODUCTION.md).
-Cite this software with [CITATION.cff](CITATION.cff) (Zenodo version DOI
-`10.5281/zenodo.21418590`, concept DOI `10.5281/zenodo.21401396`).
+Cite this software with [CITATION.cff](CITATION.cff) (immutable v1.0.2 archive
+DOI `10.5281/zenodo.21418590`, concept DOI `10.5281/zenodo.21401396`).
 
 ## Repository layout
 

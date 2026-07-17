@@ -10,12 +10,12 @@ authors:
 repository-code: "https://github.com/SaehwanPark/risk-bridge"
 url: "https://github.com/SaehwanPark/risk-bridge"
 license: Apache-2.0
-version: 1.0.3
+version: 1.0.4
 date-released: "2026-07-17"
 identifiers:
   - type: doi
     value: "10.5281/zenodo.21418590"
-    description: "This version"
+    description: "Immutable v1.0.2 archive"
   - type: doi
     value: "10.5281/zenodo.21401396"
     description: "All versions"

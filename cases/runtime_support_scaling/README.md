@@ -14,7 +14,7 @@ I/O inclusion, warm-up, and repetition counts alongside any cited timings.
 Smoke profile (fast local / CI-oriented sanity):
 
 ```bash
-uv run python cases/runtime_support_scaling/run_suite.py \
+python -m cases.runtime_support_scaling.run_suite \
   --output-root data \
   --profile smoke
 ```
@@ -22,7 +22,7 @@ uv run python cases/runtime_support_scaling/run_suite.py \
 Protocol profile (manuscript-oriented refresh):
 
 ```bash
-uv run python cases/runtime_support_scaling/run_suite.py \
+python -m cases.runtime_support_scaling.run_suite \
   --output-root data \
   --profile protocol \
   --run-label manuscript_runtime_scaling
@@ -35,7 +35,7 @@ modules):
 ```bash
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 \
 NUMEXPR_NUM_THREADS=1 POLARS_MAX_THREADS=1 \
-uv run python cases/runtime_support_scaling/run_suite.py \
+python -m cases.runtime_support_scaling.run_suite \
   --output-root data \
   --profile protocol
 ```

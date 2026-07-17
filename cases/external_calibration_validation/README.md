@@ -14,7 +14,7 @@ claims in the manuscript and SPEC completion notes. Do not invent success.
 From the repository root:
 
 ```bash
-uv run python cases/external_calibration_validation/run_suite.py \
+python -m cases.external_calibration_validation.run_suite \
   --output-root data \
   --profile smoke
 ```
@@ -22,7 +22,7 @@ uv run python cases/external_calibration_validation/run_suite.py \
 Manuscript-citable profile:
 
 ```bash
-uv run python cases/external_calibration_validation/run_suite.py \
+python -m cases.external_calibration_validation.run_suite \
   --output-root data \
   --profile full \
   --condition matched \
@@ -33,7 +33,7 @@ The manuscript-oriented profile uses `nsim=50`. The prespecified synthetic
 degradation negative control should fail at least one gate:
 
 ```bash
-uv run python cases/external_calibration_validation/run_suite.py \
+python -m cases.external_calibration_validation.run_suite \
   --output-root data \
   --profile smoke \
   --run-label external_calibration_degraded \

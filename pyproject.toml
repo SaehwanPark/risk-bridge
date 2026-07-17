@@ -1,6 +1,6 @@
 [project]
 name = "risk-bridge"
-version = "1.0.3"
+version = "1.0.4"
 description = "Risk Bridging through Constrained MLE"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -41,7 +41,21 @@ requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
+include = [
+  "risk_bridge*",
+  "cases",
+  "cases.numerical_validation*",
+  "cases.external_calibration_validation*",
+  "cases.synthetic_transport_example*",
+  "cases.runtime_support_scaling*",
+]
+[tool.setuptools.package-data]
+cases = ["README.md"]
+"cases.numerical_validation" = ["README.md"]
+"cases.external_calibration_validation" = ["README.md"]
+"cases.synthetic_transport_example" = ["README.md", "*.json"]
+"cases.runtime_support_scaling" = ["README.md"]
 
 [dependency-groups]
 dev = [

@@ -2,6 +2,17 @@
 
 All notable user-facing changes to Risk Bridge are recorded here.
 
+## 1.0.4 - PyPI case packaging
+
+### Added
+
+- Packaged the public-safe case runners in the wheel and sdist.
+- Documented `python -m` reproduction commands that work from a PyPI install.
+
+### Changed
+
+- Preserved the immutable v1.0.2 archive DOI while updating package metadata to 1.0.4.
+
 ## 1.0.3 - Citation metadata correction
 
 ### Changed

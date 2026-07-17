@@ -1,0 +1,10 @@
+include README.md
+include REPRODUCTION.md
+include CONTRIBUTING.md
+include CITATION.cff
+include LICENSE
+include cases/README.md
+recursive-include cases/numerical_validation *.py *.md
+recursive-include cases/external_calibration_validation *.py *.md
+recursive-include cases/synthetic_transport_example *.py *.md *.json
+recursive-include cases/runtime_support_scaling *.py *.md

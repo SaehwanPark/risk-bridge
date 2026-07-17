@@ -22,13 +22,13 @@ preset (`nsim=1000`), omit size overrides on the `risk-bridge` CLI (see the publ
 From the repository root:
 
 ```bash
-uv run python cases/synthetic_transport_example/run_case.py --output-root data
+python -m cases.synthetic_transport_example.run_case --output-root data
 ```
 
 Mid-size publication-oriented recipe:
 
 ```bash
-uv run python cases/synthetic_transport_example/run_case.py \
+python -m cases.synthetic_transport_example.run_case \
   --output-root data \
   --profile midsize \
   --run-label synthetic_transport_midsize

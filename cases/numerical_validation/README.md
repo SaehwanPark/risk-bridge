@@ -12,13 +12,13 @@ Artifacts are written under gitignored `data/` and must not be committed.
 From the repository root:
 
 ```bash
-uv run python cases/numerical_validation/run_suite.py --output-root data
+python -m cases.numerical_validation.run_suite --output-root data
 ```
 
 Optional label:
 
 ```bash
-uv run python cases/numerical_validation/run_suite.py \
+python -m cases.numerical_validation.run_suite \
   --output-root data \
   --run-label manuscript_validation
 ```

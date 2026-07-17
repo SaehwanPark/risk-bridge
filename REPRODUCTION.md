@@ -5,6 +5,10 @@ Bridge: Scenario 2 calibration exports, the independent numerical validation sui
 external-calibration validation study, and the synthetic transport second example. All
 commands write under gitignored `data/` and must not be committed.
 
+The public-safe case runners are included in the wheel and sdist. After installing
+`risk-bridge` from PyPI, run them as Python modules; a source checkout may use the same
+module commands from its `uv` environment.
+
 Breast-cancer or other patient-level replication cases are **not** part of this public
 bundle.
 
@@ -75,7 +79,7 @@ preparing publication Monte Carlo tables.
 ## 2. Independent numerical validation
 
 ```bash
-uv run python cases/numerical_validation/run_suite.py \
+python -m cases.numerical_validation.run_suite \
   --output-root data \
   --run-label manuscript_validation
 ```
@@ -89,7 +93,7 @@ Artifacts land under `data/numerical_validation/<run_label>_<timestamp>/` with
 Smoke profile (fast gate check):
 
 ```bash
-uv run python cases/external_calibration_validation/run_suite.py \
+python -m cases.external_calibration_validation.run_suite \
   --output-root data \
   --profile smoke
 ```
@@ -97,7 +101,7 @@ uv run python cases/external_calibration_validation/run_suite.py \
 Full profile (manuscript-oriented refresh):
 
 ```bash
-uv run python cases/external_calibration_validation/run_suite.py \
+python -m cases.external_calibration_validation.run_suite \
   --output-root data \
   --profile full \
   --condition matched \
@@ -108,7 +112,7 @@ The manuscript-oriented profile uses `nsim=50`. The prespecified synthetic
 degradation negative control is expected to fail at least one gate:
 
 ```bash
-uv run python cases/external_calibration_validation/run_suite.py \
+python -m cases.external_calibration_validation.run_suite \
   --output-root data \
   --profile smoke \
   --run-label external_calibration_degraded \
@@ -136,7 +140,7 @@ synthetic setting and does not make full Scenario 1/3 claims.
 Smoke profile (fast):
 
 ```bash
-uv run python cases/synthetic_transport_example/run_case.py \
+python -m cases.synthetic_transport_example.run_case \
   --output-root data \
   --profile smoke
 ```
@@ -144,7 +148,7 @@ uv run python cases/synthetic_transport_example/run_case.py \
 Mid-size profile (manuscript-oriented refresh, still not full Monte Carlo):
 
 ```bash
-uv run python cases/synthetic_transport_example/run_case.py \
+python -m cases.synthetic_transport_example.run_case \
   --output-root data \
   --profile midsize \
   --run-label synthetic_transport_midsize
@@ -159,7 +163,7 @@ Inspect `case_manifest.json`, `environment.json`, cohort CSVs, and
 Smoke profile (fast):
 
 ```bash
-uv run python cases/runtime_support_scaling/run_suite.py \
+python -m cases.runtime_support_scaling.run_suite \
   --output-root data \
   --profile smoke
 ```
@@ -167,7 +171,7 @@ uv run python cases/runtime_support_scaling/run_suite.py \
 Protocol profile (manuscript-oriented refresh):
 
 ```bash
-uv run python cases/runtime_support_scaling/run_suite.py \
+python -m cases.runtime_support_scaling.run_suite \
   --output-root data \
   --profile protocol \
   --run-label manuscript_runtime_scaling
@@ -185,10 +189,10 @@ not re-asserted by these tables. Treat `summary_pipeline_compute` and
 
 Package citation metadata lives in [CITATION.cff](CITATION.cff), including:
 
-- Version DOI: `10.5281/zenodo.21418590`
+- Historical v1.0.2 archive DOI: `10.5281/zenodo.21418590`
 - Concept DOI: `10.5281/zenodo.21401396`
 
-After cutting a new public tag (for example `v1.0.3`), refresh the Zenodo version
+After cutting a new public tag (for example `v1.0.4`), refresh the Zenodo version
 asset so the version DOI resolves to that tag's README/`CITATION.cff`.
 
 ## Release operator notes (development checkout)
@@ -202,7 +206,7 @@ Public export and package publication are driven from the development repository
 3. `deployment/publish_pypi.sh --repository testpypi` — dry-run validation; add
    `--execute` with a publish token (then repeat for the primary index).
 
-The `v1.0.2` public repository, GitHub release, and package-index uploads are
-complete. This corrective `1.0.3` export points `CITATION.cff` at the immutable
-Zenodo version DOI `10.5281/zenodo.21418590`; cutting `v1.0.3`, PyPI upload, and
-Zenodo verification remain operator steps after merge.
+The `v1.0.2` and `v1.0.3` public repositories, GitHub releases, and package-index
+uploads are complete. The `1.0.4` packaging release preserves the immutable
+`v1.0.2` archive DOI and adds no new scientific evidence; its PyPI upload and
+Zenodo verification are operator steps after merge.
