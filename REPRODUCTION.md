@@ -185,10 +185,10 @@ not re-asserted by these tables. Treat `summary_pipeline_compute` and
 
 Package citation metadata lives in [CITATION.cff](CITATION.cff), including:
 
-- Version DOI: `10.5281/zenodo.21401397`
+- Version DOI: `10.5281/zenodo.21418590`
 - Concept DOI: `10.5281/zenodo.21401396`
 
-After cutting a new public tag (for example `v1.0.2`), refresh the Zenodo version
+After cutting a new public tag (for example `v1.0.3`), refresh the Zenodo version
 asset so the version DOI resolves to that tag's README/`CITATION.cff`.
 
 ## Release operator notes (development checkout)
@@ -202,7 +202,7 @@ Public export and package publication are driven from the development repository
 3. `deployment/publish_pypi.sh --repository testpypi` — dry-run validation; add
    `--execute` with a publish token (then repeat for the primary index).
 
-The `v1.0.1` public repository, GitHub release, and package-index uploads are
-complete. Package metadata for `1.0.2` (including Zenodo DOIs in `CITATION.cff`)
-is prepared in this tree; cutting `v1.0.2`, PyPI upload, and Zenodo version-asset
-refresh remain operator steps after merge.
+The `v1.0.2` public repository, GitHub release, and package-index uploads are
+complete. This corrective `1.0.3` export points `CITATION.cff` at the immutable
+Zenodo version DOI `10.5281/zenodo.21418590`; cutting `v1.0.3`, PyPI upload, and
+Zenodo verification remain operator steps after merge.

@@ -156,7 +156,7 @@ End-to-end regeneration commands for Scenario 2, numerical validation, external
 calibration validation, the synthetic transport second example, and the
 runtime/support-scaling protocol are in [REPRODUCTION.md](REPRODUCTION.md).
 Cite this software with [CITATION.cff](CITATION.cff) (Zenodo version DOI
-`10.5281/zenodo.21401397`, concept DOI `10.5281/zenodo.21401396`).
+`10.5281/zenodo.21418590`, concept DOI `10.5281/zenodo.21401396`).
 
 ## Repository layout
 

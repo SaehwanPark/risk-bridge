@@ -10,11 +10,11 @@ authors:
 repository-code: "https://github.com/SaehwanPark/risk-bridge"
 url: "https://github.com/SaehwanPark/risk-bridge"
 license: Apache-2.0
-version: 1.0.2
-date-released: "2026-07-16"
+version: 1.0.3
+date-released: "2026-07-17"
 identifiers:
   - type: doi
-    value: "10.5281/zenodo.21401397"
+    value: "10.5281/zenodo.21418590"
     description: "This version"
   - type: doi
     value: "10.5281/zenodo.21401396"

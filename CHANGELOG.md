@@ -2,6 +2,13 @@
 
 All notable user-facing changes to Risk Bridge are recorded here.
 
+## 1.0.3 - Citation metadata correction
+
+### Changed
+
+- Corrected the version DOI in `CITATION.cff` to
+  `10.5281/zenodo.21418590`; no estimator or workflow behavior changed.
+
 ## 1.0.2 - External calibration validation and release metadata
 
 ### Added
@@ -13,8 +20,7 @@ All notable user-facing changes to Risk Bridge are recorded here.
 - `final/environment.json` on simulated and user-data runs (package/git/platform/
   thread metadata plus the reproducibility contract).
 - `CONTRIBUTING.md` with support expectations and privacy constraints.
-- Zenodo version DOI `10.5281/zenodo.21401397` and concept DOI
-  `10.5281/zenodo.21401396` in `CITATION.cff`.
+- DOI-bearing `CITATION.cff` metadata for the public release.
 
 ### Changed
 
