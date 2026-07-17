@@ -60,6 +60,7 @@ from risk_bridge.metrics import (
 from risk_bridge.optimize import solve_cmle_with_ladder
 from risk_bridge.output_schema import OUTPUT_SCHEMA_VERSION
 from risk_bridge.preprocess import preprocess_user_dataset
+from risk_bridge.reproducibility import write_environment_json
 from risk_bridge.sampling import propensity_scores_target_vs_source, psm_sample_source
 from risk_bridge.simulate import generate_population
 from risk_bridge.tabular import (
@@ -1753,6 +1754,20 @@ def run_scenario1_pipeline(
       write_parquet,
     )
     run_metadata_df.write_csv(final_dir / "run_metadata.csv")
+    write_environment_json(
+      final_dir / "environment.json",
+      # Prefer the package source tree over the process CWD so installed/CLI
+      # runs do not accidentally capture an unrelated repository's HEAD.
+      cwd=Path(__file__).resolve().parents[2],
+      extra={
+        "run_id": run_id,
+        "mode": "simulated",
+        "scenario": scenario_name,
+        "seed": cfg.seed,
+        "nsim": cfg.sim.nsim,
+        "run_label": runtime.run_label,
+      },
+    )
     if write_parquet and not parquet_written:
       print(
         "Package 'arrow' not installed; parquet exports were skipped (CSV exports are available)."
@@ -2058,6 +2073,17 @@ def run_user_data_pipeline(config: UserDataRunConfig) -> Path:
     config.write_parquet,
   )
   run_metadata_df.write_csv(final_dir / "run_metadata.csv")
+  write_environment_json(
+    final_dir / "environment.json",
+    cwd=Path(__file__).resolve().parents[2],
+    extra={
+      "run_id": run_id,
+      "mode": "user_data",
+      "seed": config.seed,
+      "nsim": config.nsim,
+      "run_label": config.run_label,
+    },
+  )
 
   if config.write_parquet and not parquet_written:
     print(

@@ -27,10 +27,14 @@ library wrappers.
   calibration metrics for labeled predictions.
 - `risk_bridge.output_schema`: versioned CSV output-contract constant.
 - `risk_bridge.runs`: simulated and user-data orchestration loops.
+- `risk_bridge.reproducibility`: shared package/git/platform/thread environment
+  capture and versioned numerical reproducibility contract written as
+  `final/environment.json` (and reused by case harnesses).
 - `risk_bridge.tabular`: CSV/parquet-oriented output helpers.
-- `cases/`: privacy-safe replication harnesses (`numerical_validation` and
-  `synthetic_transport_example`) that configure package entrypoints without
-  owning estimator logic.
+- `cases/`: privacy-safe replication harnesses (`numerical_validation`,
+  `external_calibration_validation`, `synthetic_transport_example`, and
+  `runtime_support_scaling`) that configure package entrypoints without owning
+  estimator logic.
 
 ## Data Flow
 
@@ -43,7 +47,9 @@ typed config
   -> calibration artifacts from reference data
   -> unconstrained ML and constrained cMLE
   -> threshold, ROC, calibration-metric, residual, and fit diagnostic rows
-  -> intermediate and final tabular outputs (schema_version in run metadata)
+  -> intermediate and final tabular outputs (schema_version in run metadata;
+     environment.json sidecar for package/git/platform/thread metadata and
+     reproducibility tolerances)
 ```
 
 Run orchestration keeps side effects at the edges:

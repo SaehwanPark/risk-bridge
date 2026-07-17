@@ -3,11 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
 import json
-import platform
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +11,6 @@ import numpy as np
 import polars as pl
 from scipy.optimize import minimize
 
-from risk_bridge import __version__ as package_version
 from risk_bridge.constraints import (
   calibration_inequalities,
   calibration_inequalities_jacobian,
@@ -25,6 +20,7 @@ from risk_bridge.likelihood import (
   joint_negative_log_likelihood_grad,
 )
 from risk_bridge.optimize import solve_cmle_with_ladder
+from risk_bridge.reproducibility import capture_run_environment
 
 
 @dataclass(frozen=True)
@@ -383,27 +379,7 @@ def run_invariance_checks(*, seed: int = 303) -> tuple[list[dict[str, object]], 
 
 
 def capture_environment() -> dict[str, Any]:
-  git_sha = None
-  try:
-    git_sha = (
-      subprocess.check_output(
-        ["git", "rev-parse", "HEAD"],
-        cwd=Path(__file__).resolve().parents[2],
-        stderr=subprocess.DEVNULL,
-        text=True,
-      ).strip()
-      or None
-    )
-  except (subprocess.CalledProcessError, FileNotFoundError, OSError):
-    git_sha = None
-  return {
-    "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-    "python_version": sys.version,
-    "platform": platform.platform(),
-    "machine": platform.machine(),
-    "package_version": package_version,
-    "git_sha": git_sha,
-  }
+  return capture_run_environment(cwd=Path(__file__).resolve().parents[2])
 
 
 def run_suite(

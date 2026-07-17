@@ -1,6 +1,6 @@
 """Risk Bridge public API."""
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 from risk_bridge.api import (
   build_scenario1_run_config,

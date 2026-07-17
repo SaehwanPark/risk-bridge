@@ -12,7 +12,10 @@ REPO_ROOT = CASE_DIR.parents[1]
 if str(REPO_ROOT) not in sys.path:
   sys.path.insert(0, str(REPO_ROOT))
 
-from cases.numerical_validation.suite import run_suite, write_suite_artifacts
+from cases.numerical_validation.suite import (  # noqa: E402
+  run_suite,
+  write_suite_artifacts,
+)
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 import json
 from pathlib import Path
-import platform
-import subprocess
-import sys
 from typing import Any
 
 import numpy as np
@@ -18,6 +15,7 @@ import polars as pl
 from risk_bridge import __version__ as package_version
 from risk_bridge import run_user_data
 from risk_bridge.config import FeatureSpec, UserDataRunConfig, UserDataSchema
+from risk_bridge.reproducibility import capture_run_environment
 from risk_bridge.simulate import generate_population
 
 
@@ -96,27 +94,7 @@ def resolve_profile(config: dict[str, Any], profile: str) -> ProfileSizes:
 
 
 def capture_environment() -> dict[str, Any]:
-  git_sha = None
-  try:
-    git_sha = (
-      subprocess.check_output(
-        ["git", "rev-parse", "HEAD"],
-        cwd=CASE_DIR.parents[1],
-        stderr=subprocess.DEVNULL,
-        text=True,
-      ).strip()
-      or None
-    )
-  except (subprocess.CalledProcessError, FileNotFoundError, OSError):
-    git_sha = None
-  return {
-    "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-    "python_version": sys.version,
-    "platform": platform.platform(),
-    "machine": platform.machine(),
-    "package_version": package_version,
-    "git_sha": git_sha,
-  }
+  return capture_run_environment(cwd=CASE_DIR.parents[1])
 
 
 def _population_frame(

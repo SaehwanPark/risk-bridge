@@ -24,6 +24,16 @@ def test_scenario2_exports_four_path_calibration_summaries(tmp_path: Path) -> No
   metadata = pl.read_csv(final_dir / "run_metadata.csv")
   assert metadata.get_column("schema_version").item(0) == OUTPUT_SCHEMA_VERSION
 
+  import json
+
+  env = json.loads((final_dir / "environment.json").read_text(encoding="utf-8"))
+  assert env["mode"] == "simulated"
+  assert env["scenario"] == "Scenario2"
+  assert env["package_version"]
+  assert "git_sha" in env
+  assert "python_version" in env
+  assert "platform" in env
+
   cal = pl.read_csv(final_dir / "calibration_metrics.csv")
   assert cal.columns == [
     "iter",

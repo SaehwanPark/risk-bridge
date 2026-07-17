@@ -152,10 +152,11 @@ Each run writes a timestamped directory under `output_root` with `intermediate/`
 
 ## Reproduction
 
-End-to-end regeneration commands for Scenario 2, numerical validation, and the
-synthetic transport second example are in [REPRODUCTION.md](REPRODUCTION.md).
-Cite this software with [CITATION.cff](CITATION.cff); add an archival DOI after
-the Zenodo (or equivalent) deposit.
+End-to-end regeneration commands for Scenario 2, numerical validation, external
+calibration validation, the synthetic transport second example, and the
+runtime/support-scaling protocol are in [REPRODUCTION.md](REPRODUCTION.md).
+Cite this software with [CITATION.cff](CITATION.cff) (Zenodo version DOI
+`10.5281/zenodo.21401397`, concept DOI `10.5281/zenodo.21401396`).
 
 ## Repository layout
 
@@ -172,6 +173,7 @@ assets/           README visual assets
 
 - [Quickstart](QUICKSTART.md)
 - [Reproduction runbook](REPRODUCTION.md)
+- [Contributing](CONTRIBUTING.md)
 - [User guide](USER_GUIDE.md)
 - [API reference](API_REFERENCE.md)
 - [Architecture overview](ARCHITECTURE.md)

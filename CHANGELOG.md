@@ -2,18 +2,24 @@
 
 All notable user-facing changes to Risk Bridge are recorded here.
 
-## Unreleased
+## 1.0.2 - External calibration validation and release metadata
 
 ### Added
 
-- CI workflow, `CITATION.cff`, and `REPRODUCTION.md` for the public reproduction
-  bundle.
-- Privacy-safe `cases/numerical_validation` and `cases/synthetic_transport_example`
-  harnesses with regenerable artifacts under `data/`.
-- Schema-versioned calibration exports (`calibration_metrics.csv`,
-  `calibration_residuals.csv`, `schema_version=1.1.0`).
-- Public GitHub repository and package-index publication for `risk-bridge==1.0.1`
-  (GitHub release `v1.0.1`). Archival DOI remains pending Zenodo deposit.
+- Privacy-safe `cases/external_calibration_validation` harness with regenerable
+  fixed-summary recovery/calibration gates under `data/`.
+- `nsim=50` external-calibration manuscript profile with replicate uncertainty
+  summaries and a prespecified fixed-summary degradation negative control.
+- `final/environment.json` on simulated and user-data runs (package/git/platform/
+  thread metadata plus the reproducibility contract).
+- `CONTRIBUTING.md` with support expectations and privacy constraints.
+- Zenodo version DOI `10.5281/zenodo.21401397` and concept DOI
+  `10.5281/zenodo.21401396` in `CITATION.cff`.
+
+### Changed
+
+- Reproduction runbook documents external-calibration validation commands and
+  Scenario 2 `environment.json` outputs.
 
 ## 1.0.1 - Dependency and tooling compatibility
 
